@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "outDir": "dist",
+    "rootDir": ".",
+    "declaration": true,
+    "paths": {
+      "@mariozechner/pi-coding-agent": ["./__mocks__/pi-coding-agent.ts"],
+      "@mariozechner/pi-ai": ["./__mocks__/pi-ai.ts"],
+      "@mariozechner/pi-tui": ["./__mocks__/pi-tui.ts"],
+      "@sinclair/typebox": ["./__mocks__/typebox.ts"]
+    }
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["dist", "node_modules"]
+}
