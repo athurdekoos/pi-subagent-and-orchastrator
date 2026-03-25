@@ -283,7 +283,7 @@ describe("AC 3.1: Read-only repository scope", () => {
 		// Original repo file unchanged
 		expect(fs.readFileSync(path.join(tmpDir, "src.ts"), "utf-8")).toBe("const x = 1;");
 		// Plan data written under .pi/planner
-		const planDir = getPlanDir(tmpDir, plan.id);
+		const planDir = getPlanDir(tmpDir, plan.id)!;
 		expect(fs.existsSync(path.join(planDir, "plan.json"))).toBe(true);
 	});
 });

@@ -1,7 +1,7 @@
 import * as path from "node:path";
 import * as fs from "node:fs";
 import type { WorkflowState, OrchestratorConfig } from "./types.js";
-import { readFileSafe, writeFileSafe, ensureDir, isDirectory } from "../file-manager/paths.js";
+import { readFileSafe, writeFileSafe, ensureDir, isDirectory, isValidId } from "../file-manager/paths.js";
 import { slugify, timestampPrefix } from "../file-manager/naming.js";
 
 const ORCHESTRATOR_ROOT = ".pi/orchestrator";
@@ -20,8 +20,9 @@ export function initOrchestratorStructure(cwd: string): boolean {
 	return ensureDir(path.join(root, WORKFLOWS_DIR));
 }
 
-/** Resolve a workflow directory path. */
-export function getWorkflowDir(cwd: string, workflowId: string): string {
+/** Resolve a workflow directory path. Returns null if workflowId is invalid. */
+export function getWorkflowDir(cwd: string, workflowId: string): string | null {
+	if (!isValidId(workflowId)) return null;
 	const root = resolveOrchestratorRoot(cwd);
 	return path.join(root, WORKFLOWS_DIR, workflowId);
 }
@@ -34,13 +35,14 @@ export function generateWorkflowId(planId: string): string {
 /** Save a workflow state (workflow.json). */
 export function saveWorkflow(cwd: string, state: WorkflowState): boolean {
 	const wfDir = getWorkflowDir(cwd, state.workflowId);
-	if (!ensureDir(wfDir)) return false;
+	if (!wfDir || !ensureDir(wfDir)) return false;
 	return writeFileSafe(path.join(wfDir, "workflow.json"), JSON.stringify(state, null, 2));
 }
 
 /** Load a workflow state. Returns null on error or missing. */
 export function loadWorkflow(cwd: string, workflowId: string): WorkflowState | null {
 	const wfDir = getWorkflowDir(cwd, workflowId);
+	if (!wfDir) return null;
 	const raw = readFileSafe(path.join(wfDir, "workflow.json"));
 	if (!raw) return null;
 	try {

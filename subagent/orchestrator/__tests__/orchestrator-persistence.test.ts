@@ -61,7 +61,7 @@ describe("orchestrator persistence", () => {
 		initOrchestratorStructure(tmpDir);
 		const state = makeWorkflowState();
 		expect(saveWorkflow(tmpDir, state)).toBe(true);
-		const filePath = path.join(getWorkflowDir(tmpDir, state.workflowId), "workflow.json");
+		const filePath = path.join(getWorkflowDir(tmpDir, state.workflowId)!, "workflow.json");
 		expect(fs.existsSync(filePath)).toBe(true);
 	});
 
@@ -81,9 +81,22 @@ describe("orchestrator persistence", () => {
 		expect(loadWorkflow(tmpDir, "nonexistent-workflow")).toBeNull();
 	});
 
+	it("rejects workflow IDs with path traversal sequences", () => {
+		expect(getWorkflowDir(tmpDir, "../../../etc")).toBeNull();
+		expect(getWorkflowDir(tmpDir, "foo/bar")).toBeNull();
+		expect(getWorkflowDir(tmpDir, "foo\\bar")).toBeNull();
+		expect(getWorkflowDir(tmpDir, "")).toBeNull();
+		expect(getWorkflowDir(tmpDir, "valid-workflow-id")).not.toBeNull();
+	});
+
+	it("loadWorkflow returns null for traversal IDs", () => {
+		initOrchestratorStructure(tmpDir);
+		expect(loadWorkflow(tmpDir, "../../../etc")).toBeNull();
+	});
+
 	it("loadWorkflow returns null for corrupt JSON", () => {
 		initOrchestratorStructure(tmpDir);
-		const wfDir = getWorkflowDir(tmpDir, "corrupt-wf");
+		const wfDir = getWorkflowDir(tmpDir, "corrupt-wf")!;
 		fs.mkdirSync(wfDir, { recursive: true });
 		fs.writeFileSync(path.join(wfDir, "workflow.json"), "not valid json{{{");
 		expect(loadWorkflow(tmpDir, "corrupt-wf")).toBeNull();
@@ -213,7 +226,7 @@ describe("orchestrator persistence", () => {
 		saveWorkflow(tmpDir, state);
 		// Read raw JSON and verify filesModified is an array, not an object
 		const rawJson = fs.readFileSync(
-			path.join(getWorkflowDir(tmpDir, "budget-serial-wf"), "workflow.json"),
+			path.join(getWorkflowDir(tmpDir, "budget-serial-wf")!, "workflow.json"),
 			"utf-8",
 		);
 		const parsed = JSON.parse(rawJson);

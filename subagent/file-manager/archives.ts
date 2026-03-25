@@ -104,7 +104,7 @@ export function listArchives(root: string, limit?: number): ArchiveEntry[] {
 		const archives: ArchiveEntry[] = [];
 
 		for (const entry of entries) {
-			if (!entry.isFile() && !entry.isSymbolicLink()) continue;
+			if (!entry.isFile()) continue;
 			if (!entry.name.endsWith(".md")) continue;
 			if (entry.name === "INDEX.md") continue;
 

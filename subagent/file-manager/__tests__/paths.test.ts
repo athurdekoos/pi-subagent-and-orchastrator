@@ -13,6 +13,7 @@ import {
 	writeFileSafe,
 	fileSize,
 	fileLineCount,
+	isValidId,
 } from "../paths.js";
 
 let tmpDir: string;
@@ -315,6 +316,47 @@ describe("path traversal attack vectors", () => {
 		const result = safePath(root, "file\0../escape");
 		// The ".." is in the string
 		expect(result).toBeNull();
+	});
+});
+
+describe("isValidId", () => {
+	it("rejects empty string", () => {
+		expect(isValidId("")).toBe(false);
+	});
+
+	it("rejects exact '..' traversal", () => {
+		expect(isValidId("..")).toBe(false);
+	});
+
+	it("rejects path traversal with slashes (caught by slash check)", () => {
+		expect(isValidId("../../../etc")).toBe(false);
+		expect(isValidId("foo/..")).toBe(false);
+		expect(isValidId("../foo")).toBe(false);
+	});
+
+	it("rejects forward slashes", () => {
+		expect(isValidId("foo/bar")).toBe(false);
+	});
+
+	it("rejects backslashes", () => {
+		expect(isValidId("foo\\bar")).toBe(false);
+	});
+
+	it("rejects null bytes", () => {
+		expect(isValidId("foo\0bar")).toBe(false);
+	});
+
+	it("rejects IDs exceeding 255 characters", () => {
+		expect(isValidId("a".repeat(256))).toBe(false);
+		expect(isValidId("a".repeat(255))).toBe(true);
+	});
+
+	it("accepts valid IDs including consecutive dots", () => {
+		expect(isValidId("2024-03-23-1545-my-plan")).toBe(true);
+		expect(isValidId("simple-id")).toBe(true);
+		expect(isValidId("plan.with.dots")).toBe(true);
+		expect(isValidId("foo..bar")).toBe(true);
+		expect(isValidId("v2..rc1")).toBe(true);
 	});
 });
 

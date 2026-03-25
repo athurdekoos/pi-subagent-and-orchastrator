@@ -203,6 +203,10 @@ export function registerOrchestrator(pi: ExtensionAPI) {
 				const workflowId = generateWorkflowId(planId);
 				initOrchestratorStructure(cwd);
 				const workflowDir = getWorkflowDir(cwd, workflowId);
+				if (!workflowDir) {
+					ctx.ui.notify("Invalid workflow ID.", "error");
+					return;
+				}
 				const showboatPath = path.join(workflowDir, "showboat.md");
 
 				// Create WorkflowState

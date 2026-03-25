@@ -78,9 +78,22 @@ describe("persistence", () => {
 		expect(config).toEqual(PLANNER_CONFIG_DEFAULTS);
 	});
 
+	it("rejects plan IDs with path traversal sequences", () => {
+		expect(getPlanDir(tmpDir, "../../../etc")).toBeNull();
+		expect(getPlanDir(tmpDir, "foo/bar")).toBeNull();
+		expect(getPlanDir(tmpDir, "foo\\bar")).toBeNull();
+		expect(getPlanDir(tmpDir, "")).toBeNull();
+		expect(getPlanDir(tmpDir, "valid-plan-id")).not.toBeNull();
+	});
+
+	it("loadPlan returns null for traversal IDs", () => {
+		initPlannerStructure(tmpDir);
+		expect(loadPlan(tmpDir, "../../../etc")).toBeNull();
+	});
+
 	it("handles corrupt plan.json gracefully", () => {
 		initPlannerStructure(tmpDir);
-		const planDir = getPlanDir(tmpDir, "corrupt-plan");
+		const planDir = getPlanDir(tmpDir, "corrupt-plan")!;
 		fs.mkdirSync(planDir, { recursive: true });
 		fs.writeFileSync(path.join(planDir, "plan.json"), "not json");
 		fs.writeFileSync(path.join(planDir, "state.json"), "not json");

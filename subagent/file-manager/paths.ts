@@ -16,11 +16,26 @@ export function resolveRoot(cwd: string, configuredRoot: string): string {
 /**
  * Check if a child path is contained within a parent path.
  * Both paths are resolved to absolute before comparison.
+ * When the child path exists on disk, resolves symlinks to prevent symlink escapes.
  */
 export function isContainedIn(child: string, parent: string): boolean {
-	const resolvedChild = path.resolve(child);
+	let resolvedChild = path.resolve(child);
 	const resolvedParent = path.resolve(parent);
-	return resolvedChild === resolvedParent || resolvedChild.startsWith(resolvedParent + path.sep);
+
+	// If the path exists, resolve symlinks to prevent symlink-based escapes
+	try {
+		resolvedChild = fs.realpathSync(resolvedChild);
+	} catch {
+		// Path doesn't exist yet — fall back to logical resolution
+	}
+	let realParent = resolvedParent;
+	try {
+		realParent = fs.realpathSync(resolvedParent);
+	} catch {
+		// Parent doesn't exist — fall back to logical resolution
+	}
+
+	return resolvedChild === realParent || resolvedChild.startsWith(realParent + path.sep);
 }
 
 /**
@@ -32,6 +47,21 @@ export function safePath(root: string, relativePath: string): string | null {
 	const resolved = path.resolve(root, relativePath);
 	if (!isContainedIn(resolved, root)) return null;
 	return resolved;
+}
+
+/**
+ * Validate an ID string for use as a filesystem path segment.
+ * Rejects IDs containing path traversal sequences, path separators, or null bytes.
+ * Returns true if the ID is safe to use in path.join().
+ */
+export function isValidId(id: string): boolean {
+	if (!id || id.length === 0) return false;
+	if (id.length > 255) return false;
+	if (id === "..") return false;
+	if (id.includes("/")) return false;
+	if (id.includes("\\")) return false;
+	if (id.includes("\0")) return false;
+	return true;
 }
 
 /**

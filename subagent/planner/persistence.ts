@@ -1,7 +1,7 @@
 import * as path from "node:path";
 import * as fs from "node:fs";
 import type { Plan, PlannerConfig, PlannerSession, SerializedFSM } from "./types.js";
-import { readFileSafe, writeFileSafe, ensureDir, isDirectory } from "../file-manager/paths.js";
+import { readFileSafe, writeFileSafe, ensureDir, isDirectory, isValidId } from "../file-manager/paths.js";
 import { slugify, timestampPrefix } from "../file-manager/naming.js";
 
 const PLANNER_ROOT = ".pi/planner";
@@ -70,8 +70,9 @@ export function savePlannerConfig(cwd: string, patch: Partial<PlannerConfig>): b
 	return writeFileSafe(configPath, JSON.stringify(merged, null, 2));
 }
 
-/** Resolve a plan directory path. */
-export function getPlanDir(cwd: string, planId: string): string {
+/** Resolve a plan directory path. Returns null if planId is invalid. */
+export function getPlanDir(cwd: string, planId: string): string | null {
+	if (!isValidId(planId)) return null;
 	const root = resolvePlannerRoot(cwd);
 	return path.join(root, PLANS_DIR, planId);
 }
@@ -79,7 +80,7 @@ export function getPlanDir(cwd: string, planId: string): string {
 /** Save a plan session (plan.json + state.json). */
 export function savePlan(cwd: string, session: PlannerSession): boolean {
 	const planDir = getPlanDir(cwd, session.planId);
-	if (!ensureDir(planDir)) return false;
+	if (!planDir || !ensureDir(planDir)) return false;
 	const planOk = writeFileSafe(path.join(planDir, "plan.json"), JSON.stringify(session.plan, null, 2));
 	const stateOk = writeFileSafe(path.join(planDir, "state.json"), JSON.stringify({
 		planId: session.planId,
@@ -92,6 +93,7 @@ export function savePlan(cwd: string, session: PlannerSession): boolean {
 /** Load a plan session. Returns null on error or missing. */
 export function loadPlan(cwd: string, planId: string): PlannerSession | null {
 	const planDir = getPlanDir(cwd, planId);
+	if (!planDir) return null;
 	const planRaw = readFileSafe(path.join(planDir, "plan.json"));
 	const stateRaw = readFileSafe(path.join(planDir, "state.json"));
 	if (!planRaw || !stateRaw) return null;

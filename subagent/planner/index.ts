@@ -172,6 +172,10 @@ export function registerPlanner(pi: ExtensionAPI) {
 				const plan = createPlan(intent);
 				initPlannerStructure(cwd);
 				const planDir = getPlanDir(cwd, plan.id);
+				if (!planDir) {
+					ctx.ui.notify("Invalid plan ID.", "error");
+					return;
+				}
 				const showboatPath = path.join(planDir, "showboat.md");
 
 				activeSession = {
@@ -624,6 +628,10 @@ export function registerPlanner(pi: ExtensionAPI) {
 						return;
 					}
 					const planDir = getPlanDir(cwd, planId);
+					if (!planDir) {
+						ctx.ui.notify("Invalid plan ID.", "error");
+						return;
+					}
 					const planJsonPath = path.join(planDir, "plan.json");
 					try {
 						const result = validatePlanFromDisk(planJsonPath);
